@@ -52,7 +52,7 @@ Make sure all tests pass before proceeding further.
 
 ## Deployment
 
-You can deploy atxt on any platform, from your laptop (provided you allow Twilio to send POST requests to it), to one or more Heroku dynos, to a dedicated cluster on AWS.  Just keep in mind that this is a sample app that doesn't come even close to the end-to-end security a real anonymizer (not that there is such a thing😀) would require.
+You can deploy atxt on any platform, from your laptop (provided you allow Twilio to send POST requests to it), to one or more Heroku dynos, to a dedicated cluster on AWS.  Just keep in mind that the goal here is to provide a simple example of non-blocking code, not a secure communications platform. 😀
 
 Don't forget to set the real credentials of your Twilio account in the ENV variables.
 
