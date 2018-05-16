@@ -17,6 +17,7 @@ import scala.util.{Failure, Success}
 class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting with ScalaFutures {
 
   val mh = new MsgHandler
+  val timeout = 1500 millis //1.5 sec is a lot, but with shorter periods tests sometimes fail on very slow machines
 
   def genInput(from:String, to:String, body:String):MsgFormInput = {
     new MsgFormInput(
@@ -55,7 +56,7 @@ class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting wit
       whenReady(MsgHandler.redis.set(tstKey, tstVal)){
         res => {
           assert(res)
-          Await.result(MsgHandler.redis.del(tstKey), 500 millis)
+          Await.result(MsgHandler.redis.del(tstKey), timeout)
         }
       }
     }
@@ -136,8 +137,8 @@ class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting wit
 
       msg(num3, id4, "test message")
       Thread.sleep(2000) //give some time to asynch Twilio call to complete
-      Await.result(mh.delSubscriber(num3), 500 millis)
-      Await.result(mh.delSubscriber(num4), 500 millis)
+      Await.result(mh.delSubscriber(num3), timeout)
+      Await.result(mh.delSubscriber(num4), timeout)
     }
 
   }
