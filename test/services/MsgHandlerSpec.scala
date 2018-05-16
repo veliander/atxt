@@ -17,7 +17,6 @@ import scala.util.{Failure, Success}
 class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting with ScalaFutures {
 
   val mh = new MsgHandler
-  val timeout = 1500 millis //1.5 sec is a lot, but with shorter periods tests sometimes fail on very slow machines
 
   def genInput(from:String, to:String, body:String):MsgFormInput = {
     new MsgFormInput(
@@ -43,10 +42,6 @@ class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting wit
   }
 
   val twnum = TwilioClient.FROM_NUMBER
-  val num1 = "+14085551213"  //test phone numbers are tricky:  have to be valid from Twilio's point of view
-  val num2 = "+14085551214" // but invalid from PSTN's
-  val num3 = "+14085551215" // but invalid from PSTN's
-  val num4 = "+14085551216" // but invalid from PSTN's
 
   val tstKey = "tstKey"
   val tstVal = "tstVal"
@@ -68,12 +63,10 @@ class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting wit
   val authTailStr = "to your list of approved senders."+tailStr
   val msgHeadStr = headStr+"Your message will be forwarded if "
   val msgTailStr =  "to the list of approved senders."+tailStr
-  var id1:String = ""
-  var id2:String = ""
-  var id3:String = ""
-  var id4:String = ""
   private val createPat = """^.*\: (.+)</Body></Message></Response>$""".r
   private val authPat = """^.*<Body>(.+) has.*your list of approved senders.</Body></Message></Response>$""".r
+
+  val timeout = 1500 millis //1.5 sec is a lot, but with shorter periods tests sometimes fail on very slow machines
 
   def createAccount(n:String)= {
     val response = mh.handleMsg(genInput(n, twnum, "Hello, atxt!"))
@@ -113,33 +106,34 @@ class MsgHandlerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting wit
   }
 
   "MsgHandler" should {
-
     "Create new accounts on First Contact" in {
-      whenReady(createAccount(num1)) {
+      val num = "+14085551213"  //test phone numbers are tricky:  have to be valid from Twilio's point of view
+      whenReady(createAccount(num)) {
         res => {
-          mh.delSubscriber(num1)
-          id1 = res
+          mh.delSubscriber(num)
         }
       }
     }
 
     "Authorize senders when requested" in {
-      whenReady(createAccount(num2)) { res => id2 = res }
-      auth("random_alias", num2)
-      mh.delSubscriber(num2)
+      val num = "+14085551214"
+      whenReady(createAccount(num)) { res => res }
+      auth("random_alias", num)
+      mh.delSubscriber(num)
     }
 
     "Forward messages from authorized senders" in {
+      val num1 = "+14085551215"
+      val num2 = "+14085551216"
 
-      whenReady(createAccount(num3)) { res => id3 = res }
-      whenReady(createAccount(num4)) { res =>  id4 = res }
-      auth(id3, num4)
+      val id1 = whenReady(createAccount(num1)) { res => res }
+      val id2 = whenReady(createAccount(num2)) { res =>  res }
+      auth(id1, num2)
 
-      msg(num3, id4, "test message")
-      Thread.sleep(2000) //give some time to asynch Twilio call to complete
-      Await.result(mh.delSubscriber(num3), timeout)
-      Await.result(mh.delSubscriber(num4), timeout)
+      msg(num1, id2, "test message")
+      Thread.sleep(2000) //allow some time for asynch Twilio call to complete
+      Await.result(mh.delSubscriber(num1), timeout)
+      Await.result(mh.delSubscriber(num2), timeout)
     }
-
   }
 }
